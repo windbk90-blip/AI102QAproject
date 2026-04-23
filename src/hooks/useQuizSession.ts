@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Question } from '../types/quiz'
 
 export interface UseQuizSessionReturn {
@@ -6,11 +6,12 @@ export interface UseQuizSessionReturn {
   currentIndex: number
   skipQuestion: () => void
   jumpToQuestion: (index: number) => void
+  restoreOrder: (ordered: Question[], startIndex: number) => void
+  clearOverride: () => void
 }
 
 export function useQuizSession(questions: Question[]): UseQuizSessionReturn {
-  // 随机打乱题目顺序
-  const shuffledQuestions = useMemo(() => {
+  const shuffledByMemo = useMemo(() => {
     const shuffled = [...questions]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
@@ -19,32 +20,39 @@ export function useQuizSession(questions: Question[]): UseQuizSessionReturn {
     return shuffled
   }, [questions])
 
-  // 当前题目索引
+  // When set, overrides the shuffled order (used for session resume)
+  const [override, setOverride] = useState<Question[] | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
 
-  // 当题目列表改变时，重置索引
+  const shuffledQuestions = override ?? shuffledByMemo
+
+  // Reset index to 0 when a new shuffle is computed (new quiz), but not when override is active
   useEffect(() => {
+    if (override) return
     setCurrentIndex(0)
+  }, [shuffledByMemo]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const restoreOrder = useCallback((ordered: Question[], startIndex: number) => {
+    setOverride(ordered)
+    setCurrentIndex(startIndex)
+  }, [])
+
+  const clearOverride = useCallback(() => {
+    setOverride(null)
+  }, [])
+
+  const skipQuestion = useCallback(() => {
+    setCurrentIndex((prev) => Math.min(prev + 1, shuffledQuestions.length - 1))
   }, [shuffledQuestions.length])
 
-  // 跳题函数：跳到下一题，如果已经是最后一题则不操作
-  const skipQuestion = () => {
-    if (currentIndex < shuffledQuestions.length - 1) {
-      setCurrentIndex(currentIndex + 1)
-    }
-  }
+  const jumpToQuestion = useCallback(
+    (index: number) => {
+      if (index >= 0 && index < shuffledQuestions.length) {
+        setCurrentIndex(index)
+      }
+    },
+    [shuffledQuestions.length],
+  )
 
-  // 跳转到指定题目
-  const jumpToQuestion = (index: number) => {
-    if (index >= 0 && index < shuffledQuestions.length) {
-      setCurrentIndex(index)
-    }
-  }
-
-  return {
-    shuffledQuestions,
-    currentIndex,
-    skipQuestion,
-    jumpToQuestion,
-  }
+  return { shuffledQuestions, currentIndex, skipQuestion, jumpToQuestion, restoreOrder, clearOverride }
 }

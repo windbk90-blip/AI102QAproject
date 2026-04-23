@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
-import { QuizMode, QuestionRecord } from '../types/quiz'
+import { QuizMode, QuestionRecord, QuizSnapshot } from '../types/quiz'
+import { QuestionPerf } from '../utils/selectRandomQuestions'
 
 export interface QuizSession {
   date: string
@@ -11,34 +12,36 @@ export interface QuizSession {
 }
 
 const STORAGE_KEY = 'quiz_history'
-const MAX_SESSIONS = 50 // 最多保存 50 次会话
+const SNAPSHOT_KEY = 'quiz_snapshot'
+const PERF_KEY = 'quiz_question_perf'
+const MAX_SESSIONS = 50
+
+function readJson<T>(key: string, fallback: T): T {
+  try {
+    const s = localStorage.getItem(key)
+    return s ? (JSON.parse(s) as T) : fallback
+  } catch {
+    return fallback
+  }
+}
 
 export function useQuizStorage() {
-  const [history, setHistory] = useState<QuizSession[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? JSON.parse(stored) : []
-    } catch (e) {
-      console.error('Failed to load quiz history from localStorage:', e)
-      return []
-    }
-  })
+  const [history, setHistory] = useState<QuizSession[]>(() => readJson(STORAGE_KEY, []))
+  const [snapshotExists, setSnapshotExists] = useState(() => !!localStorage.getItem(SNAPSHOT_KEY))
+  const [perfMap, setPerfMap] = useState<Record<string, QuestionPerf>>(() =>
+    readJson(PERF_KEY, {}),
+  )
 
-  // 保存一次答题会话
+  // ── Session history ──────────────────────────────────────────────────────────
+
   const saveSession = useCallback((session: Omit<QuizSession, 'date'>) => {
     try {
-      const newSession: QuizSession = {
-        ...session,
-        date: new Date().toISOString(),
-      }
-
+      const newSession: QuizSession = { ...session, date: new Date().toISOString() }
       setHistory((prev) => {
-        // 保持最近 MAX_SESSIONS 条记录
         const updated = [newSession, ...prev].slice(0, MAX_SESSIONS)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
         return updated
       })
-
       return newSession
     } catch (e) {
       console.error('Failed to save quiz session:', e)
@@ -46,12 +49,8 @@ export function useQuizStorage() {
     }
   }, [])
 
-  // 获取所有历史记录
-  const getHistory = useCallback((): QuizSession[] => {
-    return history
-  }, [history])
+  const getHistory = useCallback((): QuizSession[] => history, [history])
 
-  // 清空所有历史记录
   const clearHistory = useCallback(() => {
     try {
       localStorage.removeItem(STORAGE_KEY)
@@ -61,7 +60,6 @@ export function useQuizStorage() {
     }
   }, [])
 
-  // 删除单条记录
   const deleteSession = useCallback((index: number) => {
     try {
       setHistory((prev) => {
@@ -74,7 +72,6 @@ export function useQuizStorage() {
     }
   }, [])
 
-  // 获取统计信息
   const getStats = useCallback(() => {
     const stats = {
       totalSessions: history.length,
@@ -84,16 +81,51 @@ export function useQuizStorage() {
       practiceCount: 0,
       simulationCount: 0,
     }
-
-    if (stats.totalQuestions > 0) {
-      stats.averageRate = stats.totalCorrect / stats.totalQuestions
-    }
-
-    stats.practiceCount = history.filter(s => s.mode === 'practice').length
-    stats.simulationCount = history.filter(s => s.mode === 'simulation').length
-
+    if (stats.totalQuestions > 0) stats.averageRate = stats.totalCorrect / stats.totalQuestions
+    stats.practiceCount = history.filter((s) => s.mode === 'practice').length
+    stats.simulationCount = history.filter((s) => s.mode === 'simulation').length
     return stats
   }, [history])
+
+  // ── Mid-quiz snapshot ────────────────────────────────────────────────────────
+
+  const saveSnapshot = useCallback((snapshot: QuizSnapshot) => {
+    try {
+      localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot))
+      setSnapshotExists(true)
+    } catch (e) {
+      console.error('Failed to save snapshot:', e)
+    }
+  }, [])
+
+  const loadSnapshot = useCallback((): QuizSnapshot | null => {
+    return readJson<QuizSnapshot | null>(SNAPSHOT_KEY, null)
+  }, [])
+
+  const clearSnapshot = useCallback(() => {
+    localStorage.removeItem(SNAPSHOT_KEY)
+    setSnapshotExists(false)
+  }, [])
+
+  // ── Per-question performance (spaced repetition) ─────────────────────────────
+
+  const updateQuestionPerf = useCallback((records: QuestionRecord[]) => {
+    setPerfMap((prev) => {
+      const updated = { ...prev }
+      const now = new Date().toISOString()
+      for (const r of records) {
+        const id = r.question.id
+        updated[id] = {
+          consecutiveCorrect: r.isCorrect ? (updated[id]?.consecutiveCorrect ?? 0) + 1 : 0,
+          lastSeen: now,
+        }
+      }
+      try {
+        localStorage.setItem(PERF_KEY, JSON.stringify(updated))
+      } catch {}
+      return updated
+    })
+  }, [])
 
   return {
     history,
@@ -102,5 +134,11 @@ export function useQuizStorage() {
     clearHistory,
     deleteSession,
     getStats,
+    snapshotExists,
+    saveSnapshot,
+    loadSnapshot,
+    clearSnapshot,
+    perfMap,
+    updateQuestionPerf,
   }
 }

@@ -3,14 +3,36 @@ import { ModeSelection } from './components/ModeSelection'
 import { ResultScreen } from './components/ResultScreen'
 import { QuizCard } from './components/layout/QuizCard'
 import { useCurrentAnswer } from './hooks/useCurrentAnswer'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useQuizFlow } from './hooks/useQuizFlow'
 
 function App() {
   const flow = useQuizFlow()
   const answer = useCurrentAnswer(flow.currentQuestion?.id)
 
+  const handleSubmit = () => {
+    flow.submitAnswer(answer.userAnswer)
+    answer.revealExplanation()
+  }
+
+  useKeyboardShortcuts({
+    enabled: flow.screen === 'quiz',
+    question: flow.currentQuestion,
+    userAnswer: answer.userAnswer,
+    showExplanation: answer.showExplanation,
+    onAnswerChange: answer.setUserAnswer,
+    onSubmit: handleSubmit,
+    onSkip: flow.skipCurrent,
+    onAdvance: flow.advanceOrFinish,
+  })
+
   if (flow.screen === 'mode-select') {
-    return <ModeSelection onModeSelect={flow.startMode} />
+    return (
+      <ModeSelection
+        onModeSelect={flow.startMode}
+        onResume={flow.snapshotExists ? flow.resumeSession : undefined}
+      />
+    )
   }
 
   if (flow.screen === 'history') {
@@ -18,11 +40,6 @@ function App() {
   }
 
   if (flow.screen === 'quiz' && flow.currentQuestion) {
-    const handleSubmit = () => {
-      flow.submitAnswer(answer.userAnswer)
-      answer.revealExplanation()
-    }
-
     const handleClose = () => {
       if (window.confirm('确定要关闭当前练习吗？进度将会丢失。')) {
         flow.closeToMenu()
