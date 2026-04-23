@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Question, QuestionType } from '../types/quiz'
+import { Option, Question, QuestionType } from '../types/quiz'
 
 export interface FilterOptions {
   types?: QuestionType[]
@@ -25,7 +25,7 @@ export function useQuestionFilter(questions: Question[]) {
     return questions.filter(q => {
       const matchesContent = q.content.toLowerCase().includes(lowerKeyword)
       const matchesExplanation = q.explanation.toLowerCase().includes(lowerKeyword)
-      const matchesOptions = 'options' in q && q.options.some((opt: any) => 
+      const matchesOptions = 'options' in q && q.options.some((opt: Option) =>
         opt.text.toLowerCase().includes(lowerKeyword)
       )
       return matchesContent || matchesExplanation || matchesOptions

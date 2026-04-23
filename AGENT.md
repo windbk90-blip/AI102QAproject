@@ -32,9 +32,9 @@ npm run preview  # Preview production build
 ## Architecture Rules (Non-Negotiable)
 - ✋ **No routing libraries** — Use state-based screen switching (enum/flags)
 - 🪝 **Logic in hooks, rendering in components** — Keep separation strict
-- 📦 **File size < 150 lines** — Split larger files
+- 📦 **Keep files small** — ~150 lines is the soft target; split when a file crosses it
 - 🔤 **Answer state always `string[]`** — Normalize all types
-- 🚫 **No backend/database** — All state in-memory
+- 🚫 **No backend/database** — All state in-memory (plus `localStorage` via `useQuizStorage`)
 
 ## Common Tasks
 
@@ -57,7 +57,7 @@ Check [src/hooks/useScoreTracker.ts](src/hooks/useScoreTracker.ts) `isAnswerCorr
 - [ ] Question parsed correctly? Check [src/data/sortedQuestions.json](src/data/sortedQuestions.json) format
 - [ ] Answer comparison failing? Verify answer state is `string[]` (not mixing types)
 - [ ] Component prop types wrong? Check types in [src/types/quiz.ts](src/types/quiz.ts)
-- [ ] Style issues? Tailwind classes in components (CSS in [src/index.css](src/index.css))
+- [ ] Style issues? Plain global CSS in [src/index.css](src/index.css) (no Tailwind / CSS-in-JS)
 
 ## Related Skills
 - **quiz2json**: Automate markdown-to-JSON parsing. See [.github/skills/quiz2json/SKILL.md](.github/skills/quiz2json/SKILL.md)

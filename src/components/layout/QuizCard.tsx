@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCountdown } from '../../hooks/useCountdown';
 import { Question, QuizMode } from '../../types/quiz';
 import { ExplanationPanel } from './ExplanationPanel';
 import {
@@ -18,6 +19,7 @@ interface QuizCardProps {
   correctCount: number;
   correctRate: number;
   showExplanation: boolean;
+  remainingSeconds?: number | null;
 }
 
 export const QuizCard: React.FC<QuizCardProps> = ({
@@ -30,7 +32,9 @@ export const QuizCard: React.FC<QuizCardProps> = ({
   correctCount,
   correctRate,
   showExplanation,
+  remainingSeconds,
 }) => {
+  const lowTime = typeof remainingSeconds === 'number' && remainingSeconds <= 60;
   const renderQuestionComponent = () => {
     switch (question.type) {
       case 'single':
@@ -85,6 +89,11 @@ export const QuizCard: React.FC<QuizCardProps> = ({
       {mode === 'simulation' && (
         <div className="progress-display">
           <div>Progress: Question {currentIndex + 1} / {totalQuestions}</div>
+          {typeof remainingSeconds === 'number' && (
+            <div className={`countdown${lowTime ? ' countdown-low' : ''}`}>
+              剩余时间: {formatCountdown(remainingSeconds)}
+            </div>
+          )}
         </div>
       )}
       {renderQuestionComponent()}

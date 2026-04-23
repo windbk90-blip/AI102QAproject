@@ -11,7 +11,7 @@ interface ResultScreenProps {
   onRestartAll: () => void;
   onRestartWrong: () => void;
   onViewHistory?: () => void;
-  onReviewQuestion?: (questionIndex: number) => void;
+  onReviewQuestion?: (questionId: string) => void;
 }
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
