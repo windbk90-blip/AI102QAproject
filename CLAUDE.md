@@ -13,9 +13,11 @@ npm run dev          # Vite dev server (http://localhost:5173)
 npm run build        # tsc type-check then vite build → dist/
 npm run preview      # Preview the production build
 npm run parse-quiz   # Regenerate src/data/sortedQuestions.json from questions.md
+npm test             # Run vitest suite once
+npm run test:watch   # Run vitest in watch mode
 ```
 
-There is no test runner, linter, or formatter configured. `npm run build` is the only static check (TypeScript).
+Static checks: `npm run build` (TypeScript) and `npm test` (vitest). No linter/formatter is configured. Tests live next to the code they cover (`*.test.ts` / `*.test.mjs`); pure utilities live in `src/utils/` so they are hook-free and directly testable.
 
 ## Architecture
 
@@ -32,7 +34,7 @@ Four types — `single`, `multiple`, `sort`, `truefalse`. **User answer state is
 - sort → `['1', '2', '3']` (order-sensitive)
 - truefalse → `['true']` / `['false']`
 
-**Answer validation ([src/hooks/useScoreTracker.ts](src/hooks/useScoreTracker.ts) `isAnswerCorrect`):** single / multiple / truefalse use set comparison; `sort` requires exact sequence match. When adding a new `QuestionType`, update types → add a component under `components/questions/` → add a branch in `isAnswerCorrect`.
+**Answer validation ([src/utils/isAnswerCorrect.ts](src/utils/isAnswerCorrect.ts)):** single / multiple / truefalse use set comparison; `sort` requires exact sequence match. Used by `useScoreTracker`. When adding a new `QuestionType`, update types → add a component under `components/questions/` → add a branch in `isAnswerCorrect` (and extend [src/utils/isAnswerCorrect.test.ts](src/utils/isAnswerCorrect.test.ts)).
 
 **Question data pipeline:** Authoring happens in [src/data/questions.md](src/data/questions.md) (markdown, Chinese, format documented in the file header). The [scripts/parseQuestions.mjs](scripts/parseQuestions.mjs) Node script parses it into [src/data/sortedQuestions.json](src/data/sortedQuestions.json), which is the runtime import in `App.tsx`. After editing `questions.md`, run `npm run parse-quiz` and restart the dev server — the JSON file is the source of truth at runtime, not the markdown.
 

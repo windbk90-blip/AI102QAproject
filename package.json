@@ -16,7 +16,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "parse-quiz": "node scripts/parseQuestions.mjs"
+    "parse-quiz": "node scripts/parseQuestions.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -28,6 +30,7 @@
     "@types/react-dom": "^18.2.0",
     "@vitejs/plugin-react": "^4.0.0",
     "typescript": "^5.0.0",
-    "vite": "^4.3.0"
+    "vite": "^4.3.0",
+    "vitest": "^4.1.5"
   }
 }
