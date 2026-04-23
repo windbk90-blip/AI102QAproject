@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { Question, QuestionRecord } from '../types/quiz'
+import { isAnswerCorrect } from '../utils/isAnswerCorrect'
 
 export interface UseScoreTrackerReturn {
   records: QuestionRecord[]
@@ -8,29 +9,6 @@ export interface UseScoreTrackerReturn {
   totalAnswered: number
   correctCount: number
   reset: () => void
-}
-
-function isAnswerCorrect(question: Question, userAnswer: string[]): boolean {
-  const correctAnswer = question.answer
-
-  switch (question.type) {
-    case 'single':
-    case 'multiple':
-    case 'truefalse':
-      // 对于这些类型，顺序不重要，比较集合
-      if (userAnswer.length !== correctAnswer.length) return false
-      const userSet = new Set(userAnswer)
-      const correctSet = new Set(correctAnswer)
-      return userSet.size === correctSet.size && [...userSet].every(id => correctSet.has(id))
-
-    case 'sort':
-      // 排序题顺序重要，完全匹配
-      return userAnswer.length === correctAnswer.length &&
-             userAnswer.every((item, index) => item === correctAnswer[index])
-
-    default:
-      return false
-  }
 }
 
 export function useScoreTracker(): UseScoreTrackerReturn {

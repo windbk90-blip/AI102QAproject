@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * MD 题库 → JSON 转换器 (Node.js 版本)
  * 支持单选、多选、排序、判断题，适用于 AI-102 等认证考试 Markdown 题库格式。
@@ -27,7 +26,7 @@ function extractLetters(text) {
  *   - "C、D、F" → 多选
  *   - "A / D" → 取第一个 A
  */
-function parseAnswer(answerRaw) {
+export function parseAnswer(answerRaw) {
   if (!answerRaw || typeof answerRaw !== 'string') {
     return [null, null];
   }
@@ -322,4 +321,7 @@ function main() {
   console.log(`   输出文件：${outputPath}`);
 }
 
-main();
+// Only run main() when executed directly via CLI, not when imported for tests.
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
+}
