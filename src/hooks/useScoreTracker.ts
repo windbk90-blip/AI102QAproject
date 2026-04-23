@@ -5,6 +5,7 @@ import { isAnswerCorrect } from '../utils/isAnswerCorrect'
 export interface UseScoreTrackerReturn {
   records: QuestionRecord[]
   submitAnswer: (question: Question, userAnswer: string[]) => void
+  restoreRecords: (records: QuestionRecord[]) => void
   correctRate: number
   totalAnswered: number
   correctCount: number
@@ -16,12 +17,12 @@ export function useScoreTracker(): UseScoreTrackerReturn {
 
   const submitAnswer = useCallback((question: Question, userAnswer: string[]) => {
     const isCorrect = isAnswerCorrect(question, userAnswer)
-    const record: QuestionRecord = {
-      question,
-      userAnswer,
-      isCorrect,
-    }
-    setRecords(prev => [...prev, record])
+    const record: QuestionRecord = { question, userAnswer, isCorrect }
+    setRecords((prev) => [...prev, record])
+  }, [])
+
+  const restoreRecords = useCallback((restored: QuestionRecord[]) => {
+    setRecords(restored)
   }, [])
 
   const reset = useCallback(() => {
@@ -29,15 +30,8 @@ export function useScoreTracker(): UseScoreTrackerReturn {
   }, [])
 
   const totalAnswered = records.length
-  const correctCount = records.filter(record => record.isCorrect).length
+  const correctCount = records.filter((r) => r.isCorrect).length
   const correctRate = totalAnswered > 0 ? correctCount / totalAnswered : 0
 
-  return {
-    records,
-    submitAnswer,
-    correctRate,
-    totalAnswered,
-    correctCount,
-    reset,
-  }
+  return { records, submitAnswer, restoreRecords, correctRate, totalAnswered, correctCount, reset }
 }

@@ -49,3 +49,10 @@ export interface QuestionRecord {
 export type QuizMode = 'practice' | 'simulation'
 
 export type Screen = 'mode-select' | 'quiz' | 'result' | 'history'
+
+export interface QuizSnapshot {
+  mode: QuizMode
+  questionIds: string[]  // shuffled question order
+  currentIndex: number
+  records: QuestionRecord[]
+}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuizStorage } from '../hooks/useQuizStorage'
+import { exportHistoryAsJson } from '../utils/exportData'
 
 interface HistoryScreenProps {
   onClose: () => void
@@ -102,12 +103,12 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose }) => {
               <div className="history-item-details">
                 <div className="wrong-questions">
                   <h4>错题详情</h4>
-                  {session.records.filter(r => !r.isCorrect).length === 0 ? (
-                    <p className="no-wrong">全部正确！🎉</p>
+                  {session.records.filter((r) => !r.isCorrect).length === 0 ? (
+                    <p className="no-wrong">全部正确！</p>
                   ) : (
                     <ul className="wrong-list">
                       {session.records
-                        .filter(r => !r.isCorrect)
+                        .filter((r) => !r.isCorrect)
                         .map((record, idx) => (
                           <li key={idx} className="wrong-item">
                             <div className="question-preview">
@@ -133,6 +134,13 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onClose }) => {
       </div>
 
       <div className="history-footer">
+        <button
+          className="export-btn"
+          onClick={() => exportHistoryAsJson(history)}
+          title="导出所有历史记录为 JSON 文件"
+        >
+          导出历史 JSON
+        </button>
         <button onClick={handleClearHistory} className="clear-all-btn">
           清空所有历史记录
         </button>

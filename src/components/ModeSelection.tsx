@@ -15,9 +15,10 @@ const ALL_QUESTIONS = questionsData as Question[]
 
 interface ModeSelectionProps {
   onModeSelect: (mode: QuizMode, typeFilter: QuestionType[]) => void
+  onResume?: () => void
 }
 
-export const ModeSelection: React.FC<ModeSelectionProps> = ({ onModeSelect }) => {
+export const ModeSelection: React.FC<ModeSelectionProps> = ({ onModeSelect, onResume }) => {
   const { getTypeStats } = useQuestionFilter(ALL_QUESTIONS)
   const [selectedTypes, setSelectedTypes] = useState<QuestionType[]>(ALL_TYPES)
 
@@ -39,6 +40,12 @@ export const ModeSelection: React.FC<ModeSelectionProps> = ({ onModeSelect }) =>
   return (
     <div className="mode-selection">
       <h1>选择答题模式</h1>
+
+      {onResume && (
+        <button className="resume-button" onClick={onResume}>
+          继续上次练习
+        </button>
+      )}
 
       <div className="type-filter">
         <div className="type-filter-header">

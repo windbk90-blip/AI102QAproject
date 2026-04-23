@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { QuestionRecord, QuizMode } from '../types/quiz';
 import { QuestionText } from './questions/QuestionText';
+import { exportWrongAnswersAsCsv } from '../utils/exportData';
 
 interface ResultScreenProps {
   totalQuestions: number;
@@ -27,24 +28,18 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 }) => {
   const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
 
-  // 计算按题型统计
   const typeStats = React.useMemo(() => {
     const stats: Record<string, { total: number; correct: number }> = {};
-    records.forEach(record => {
+    records.forEach((record) => {
       const type = record.question.type;
-      if (!stats[type]) {
-        stats[type] = { total: 0, correct: 0 };
-      }
+      if (!stats[type]) stats[type] = { total: 0, correct: 0 };
       stats[type].total++;
-      if (record.isCorrect) {
-        stats[type].correct++;
-      }
+      if (record.isCorrect) stats[type].correct++;
     });
     return stats;
   }, [records]);
 
-  // 获取错题
-  const wrongQuestions = records.filter(record => !record.isCorrect);
+  const wrongQuestions = records.filter((record) => !record.isCorrect);
 
   const toggleExpanded = (questionId: string) => {
     const newExpanded = new Set(expandedQuestions);
@@ -69,30 +64,36 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   return (
     <div className="result-screen">
       <h2>{mode === 'practice' ? '练习结束！' : '模拟考试完成！'}</h2>
-      
-      {/* 大字显示正确率 */}
+
       <div className="overall-score">
         <div className="score-display">{correctCount} / {totalQuestions}</div>
         <div className="score-percentage">{(correctRate * 100).toFixed(1)}%</div>
       </div>
-      
-      {/* 按题型分类的小统计 */}
+
       <div className="type-stats">
         <h3>题型统计</h3>
         {Object.entries(typeStats).map(([type, stat]) => (
           <div key={type} className="type-stat">
-            {getTypeLabel(type)}: {(stat as { total: number; correct: number }).correct}/{(stat as { total: number; correct: number }).total}
+            {getTypeLabel(type)}: {stat.correct}/{stat.total}
           </div>
         ))}
       </div>
-      
-      {/* 错题列表 */}
+
       {wrongQuestions.length > 0 && (
         <div className="wrong-questions">
-          <h3>错题回顾</h3>
+          <div className="wrong-questions-header">
+            <h3>错题回顾</h3>
+            <button
+              className="export-btn"
+              onClick={() => exportWrongAnswersAsCsv(records)}
+              title="导出错题为 CSV 文件"
+            >
+              导出 CSV
+            </button>
+          </div>
           {wrongQuestions.map((record, index) => (
             <div key={record.question.id} className="wrong-question-item">
-              <button 
+              <button
                 className="question-toggle"
                 onClick={() => toggleExpanded(record.question.id)}
               >
@@ -101,11 +102,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
               {expandedQuestions.has(record.question.id) && (
                 <div className="question-details">
                   <QuestionText content={record.question.content} />
-                  <p><strong>你的答案：</strong>{record.userAnswer.join(', ')}</p>
+                  <p><strong>你的答案：</strong>{record.userAnswer.join(', ') || '跳过'}</p>
                   <p><strong>正确答案：</strong>{record.question.answer.join(', ')}</p>
                   <p><strong>解析：</strong>{record.question.explanation}</p>
                   {onReviewQuestion && (
-                    <button 
+                    <button
                       className="review-button"
                       onClick={() => onReviewQuestion(record.question.id)}
                     >
@@ -118,8 +119,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           ))}
         </div>
       )}
-      
-      {/* 按钮 */}
+
       <div className="action-buttons">
         <button onClick={onRestartAll}>再来一次（全部）</button>
         <button onClick={onRestartWrong} disabled={wrongQuestions.length === 0}>
@@ -127,7 +127,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         </button>
         {onViewHistory && (
           <button onClick={onViewHistory} className="history-btn">
-            📊 查看历史
+            查看历史
           </button>
         )}
       </div>
